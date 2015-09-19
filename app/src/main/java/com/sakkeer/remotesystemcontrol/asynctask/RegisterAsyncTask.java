@@ -19,30 +19,22 @@ import java.net.Socket;
 /**
  * Created by sakkeer on 19/9/15.
  */
-public class RegisterAsyncTask extends AsyncTask<ConnectionModel, Void, Boolean> {
+public class RegisterAsyncTask extends AsyncTask<ConnectionModel, Void, String> {
     final String TAG = "RegisterAsyncTask";
 
-    private ProgressDialog progressDialog;
     private ServerSyncListener listener;
 
-    public RegisterAsyncTask(Context context, ServerSyncListener listener){
-        this.progressDialog = new ProgressDialog(context);
-        this.progressDialog.setMessage("Syncing....");
-        this.progressDialog.setCancelable(false);
-        this.progressDialog.setCanceledOnTouchOutside(false);
+    public RegisterAsyncTask(ServerSyncListener listener){
         this.listener = listener;
     }
 
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-        if (this.progressDialog != null) {
-            this.progressDialog.show();
-        }
     }
 
     @Override
-    protected Boolean doInBackground(ConnectionModel... params) {
+    protected String doInBackground(ConnectionModel... params) {
         ConnectionModel connectionModel = params[0];
 
         Socket echoSocket = null;
@@ -58,34 +50,28 @@ public class RegisterAsyncTask extends AsyncTask<ConnectionModel, Void, Boolean>
 
             while (!in.ready()) {}
             String result = in.readLine(); // Read one line and output it
-            Log.d(TAG, "Result : "+result);
+            Log.d(TAG, "Result : " + result);
 
             echoSocket.close();
             out.close();
             in.close();
 
-            if (result.equals("y")){
-                return true;
-            }else{
-                return false;
-            }
+            return result;
 
         }catch (Exception e){
-            return false;
+            return e.getMessage();
         }
     }
 
     @Override
-    protected void onPostExecute(Boolean aBoolean) {
-        super.onPostExecute(aBoolean);
-        if (this.progressDialog != null) {
-            this.progressDialog.dismiss();
-        }
+    protected void onPostExecute(String response) {
+        super.onPostExecute(response);
         if (this.listener != null) {
-            if (aBoolean){
-                this.listener.gotSuccessResponse();
+            if (response.equals("YES")){
+                this.listener.gotSuccessResponse(response);
             }else {
-                this.listener.gotFailureResponse();
+                this.listener.gotFailureResponse(response);
+//                this.listener.gotSuccessResponse(response);
             }
         }
     }

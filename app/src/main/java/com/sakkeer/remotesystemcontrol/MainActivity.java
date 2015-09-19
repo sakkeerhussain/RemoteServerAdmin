@@ -1,7 +1,10 @@
 package com.sakkeer.remotesystemcontrol;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.support.design.widget.AppBarLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -38,16 +41,18 @@ public class MainActivity extends AppCompatActivity {
 
         connectButton = (Button)findViewById(R.id.connect_button);
         connectButton.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
-                String ipAddress = ip.getText().toString();
-                int portNum;
+                final String ipAddress = ip.getText().toString();
+                final int portNum;
                 try {
                     portNum = Integer.valueOf(port.getText().toString());
                 }catch (NumberFormatException e){
                     AlertDialog error = new AlertDialog.Builder(MainActivity.this)
                             .setTitle("ERROR")
                             .setMessage("Enter correct port number")
+                            .setCancelable(false)
                             .setPositiveButton("OK", null)
                             .create();
                     error.show();
@@ -61,21 +66,32 @@ public class MainActivity extends AppCompatActivity {
                 connectionModel.setPort(portNum);
                 connectionModel.setData("REGISTER-" + imei);
 
-                RegisterAsyncTask task = new RegisterAsyncTask(MainActivity.this, new ServerSyncListener() {
+
+                final AlertDialog progress = new AlertDialog.Builder(MainActivity.this)
+                        .setMessage("Syncing...")
+                        .setCancelable(false)
+                        .create();
+                progress.show();
+
+                RegisterAsyncTask task = new RegisterAsyncTask(new ServerSyncListener() {
                     @Override
-                    public void gotSuccessResponse() {
-                        AlertDialog error = new AlertDialog.Builder(MainActivity.this)
-                                .setTitle("SUCCESS")
-                                .setMessage("Successfully registered.\nNow confirm at server. ")
-                                .create();
-                        error.show();
+                    public void gotSuccessResponse(String response) {
+                        progress.dismiss();
+                        Intent i = new Intent(MainActivity.this, ActionActivity.class);
+                        i.putExtra("ip", ipAddress);
+                        i.putExtra("port", portNum);
+                        startActivity(i);
+                        MainActivity.this.finish();
                     }
 
                     @Override
-                    public void gotFailureResponse() {
+                    public void gotFailureResponse(String response) {
+                        progress.dismiss();
                         AlertDialog error = new AlertDialog.Builder(MainActivity.this)
                                 .setTitle("ERROR")
-                                .setMessage("Server failed!")
+                                .setMessage("Connection failed!\n" + response)
+                                .setCancelable(false)
+                                .setPositiveButton("OK", null)
                                 .create();
                         error.show();
                     }
@@ -86,25 +102,4 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 }
