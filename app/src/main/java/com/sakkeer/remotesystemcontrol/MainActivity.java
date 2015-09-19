@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
                     AlertDialog error = new AlertDialog.Builder(MainActivity.this)
                             .setTitle("ERROR")
                             .setMessage("Enter correct port number")
+                            .setPositiveButton("OK", null)
                             .create();
                     error.show();
                     return;

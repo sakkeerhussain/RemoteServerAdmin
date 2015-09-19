@@ -13,6 +13,7 @@ import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
@@ -43,25 +44,24 @@ public class RegisterAsyncTask extends AsyncTask<ConnectionModel, Void, Boolean>
     @Override
     protected Boolean doInBackground(ConnectionModel... params) {
         ConnectionModel connectionModel = params[0];
+
+        Socket echoSocket = null;
+        PrintWriter out = null;
+        BufferedReader in = null;
         try {
-            Socket skt = new Socket(connectionModel.getIp(),connectionModel.getPort());
+            echoSocket = new Socket(connectionModel.getIp(), connectionModel.getPort());
+            out = new PrintWriter(echoSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(
+                    echoSocket.getInputStream()));
 
-            //Send the message to the server
-            OutputStream os = skt.getOutputStream();
-            OutputStreamWriter osw = new OutputStreamWriter(os);
-            BufferedWriter bw = new BufferedWriter(osw);
-            String sendMessage = connectionModel.getData();
-            bw.write(sendMessage);
-            bw.flush();
-            Log.d(TAG, "Message sent to the server : " + sendMessage);
-
-            BufferedReader in = new BufferedReader(new
-                    InputStreamReader(skt.getInputStream()));
-            Log.d(TAG, "Received string:");
+            out.println(connectionModel.getData());
 
             while (!in.ready()) {}
             String result = in.readLine(); // Read one line and output it
-            Log.d(TAG, result);
+            Log.d(TAG, "Result : "+result);
+
+            echoSocket.close();
+            out.close();
             in.close();
 
             if (result.equals("y")){
